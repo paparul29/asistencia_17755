@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Asistencia 17755">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Asistencia 17755</title>
+<style>
+:root{--bg:#000;--card:#111;--line:#2b2b2b;--fg:#fff;--mut:#a6a6a6;--green:#006847;--red:#CE1125;--r:6px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+body{padding-top:env(safe-area-inset-top)}
+.wrap{max-width:560px;margin:0 auto;padding:16px 16px calc(130px + env(safe-area-inset-bottom))}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+h1{font-size:20px;margin:0;letter-spacing:.04em}
+.sub{color:var(--mut);font-size:13px}
+.band{height:3px;margin:12px 0 16px;background:linear-gradient(90deg,var(--green) 0 33.3%,#fff 33.3% 66.6%,var(--red) 66.6% 100%)}
+.link{background:none;border:1px solid var(--line);color:var(--mut);border-radius:var(--r);padding:8px 12px;font:inherit;font-size:13px;min-height:36px}
+label{display:block;color:var(--mut);font-size:13px;margin:12px 0 4px}
+input{width:100%;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:var(--r);padding:12px;font:inherit;color-scheme:dark;min-height:44px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px;margin-top:12px}
+.name{font-weight:600;margin-bottom:8px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.col{display:grid;gap:8px;margin-top:8px}
+.card input{margin-top:8px;font-size:15px}
+.opt{background:transparent;color:var(--fg);border:1px solid #3a3a3a;border-radius:var(--r);padding:10px;font:inherit;min-height:44px;transition:background .15s ease-out}
+.opt.sel-g{background:var(--green);border-color:var(--green)}
+.opt.sel-r{background:var(--red);border-color:var(--red)}
+.opt.sel-m{background:#fff;color:#000;border-color:#fff}
+.opt.sel-n{background:#3a3a3a;border-color:#6a6a6a}
+.foot{position:fixed;left:0;right:0;bottom:0;background:#000;border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom))}
+.foot .in{max-width:560px;margin:0 auto}
+.prog{display:flex;justify-content:space-between;color:var(--mut);font-size:13px;margin-bottom:8px}
+.send{width:100%;background:#fff;color:#000;border:0;border-radius:var(--r);font:inherit;font-weight:600;min-height:48px}
+.send:disabled{background:#2b2b2b;color:#777}
+.msg{margin-top:12px;padding:12px;border-radius:var(--r);border:1px solid var(--line);font-size:14px}
+.msg.err{border-color:var(--red)}
+.msg.ok{border-color:var(--green)}
+.hide{display:none!important}
+.big{font-size:18px;font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>ASISTENCIA 17755</h1>
+      <div class="sub">Cerbotics Blue 17755</div>
+    </div>
+    <button class="link" id="btnSettings" type="button">Ajustes</button>
+  </header>
+  <div class="band"></div>
+
+  <section id="setup" class="hide">
+    <div class="big">Ajustes de conexión</div>
+    <label for="cfgUrl">URL del Apps Script (termina en /exec)</label>
+    <input id="cfgUrl" type="url" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <label for="cfgKey">Clave secreta</label>
+    <input id="cfgKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div id="setupMsg" class="msg err hide"></div>
+    <div class="row2" style="margin-top:16px">
+      <button class="opt" id="cfgCancel" type="button">Cancelar</button>
+      <button class="opt sel-m" id="cfgSave" type="button">Guardar</button>
+    </div>
+  </section>
+
+  <section id="main" class="hide">
+    <label for="fecha">Fecha del taller</label>
+    <input id="fecha" type="date">
+    <div id="list"></div>
+    <div id="sendMsg" class="msg hide"></div>
+  </section>
+
+  <section id="done" class="hide">
+    <div class="msg ok">
+      <div class="big">Asistencia registrada</div>
+      <div id="doneTxt" class="sub" style="margin-top:4px"></div>
+    </div>
+    <button class="send" id="btnNew" type="button" style="margin-top:16px">Nuevo registro</button>
+  </section>
+</div>
+
+<div class="foot hide" id="foot">
+  <div class="in">
+    <div class="prog"><span id="progTxt"></span><span>Hora: se toma al enviar</span></div>
+    <button class="send" id="btnSend" type="button" disabled>Enviar asistencia</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+const MEMBERS = ["Raul","Enrique","Sergio","Abril","Isabella","Kyrah","Sebas","Olvera","Mafer","Axwell","Santiago S","Matías R"];
+const PERF = ["Trabajo bien","Trabajo pero se distrae","No hizo nada"];
+const DEFAULT_URL = "https://script.google.com/macros/s/AKfycbwwHJk7NJ-Uns6sm0z1cU12KMFFQW6aOTdAmC09_USetO54LJa_Gx4gY99ryKJDO5Gr/exec";
+const CFG_KEY = "asist17755:cfg";
+const DRAFT_KEY = "asist17755:draft";
+
+const $ = id => document.getElementById(id);
+const store = {
+  get(k){ try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+  set(k,v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+  del(k){ try { localStorage.removeItem(k); } catch (e) {} }
+};
+const pad = n => String(n).padStart(2,"0");
+const todayStr = () => { const d = new Date(); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); };
+const nowHHmm = () => { const d = new Date(); return pad(d.getHours())+":"+pad(d.getMinutes()); };
+
+function h(tag, attrs, ...kids){
+  const e = document.createElement(tag);
+  for (const [k,v] of Object.entries(attrs || {})) {
+    if (k === "class") e.className = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v);
+  }
+  for (const k of kids) if (k !== null && k !== undefined && k !== false) e.append(k);
+  return e;
+}
+
+let cfg = store.get(CFG_KEY);
+let state = freshState();
+let cards = {};
+let sending = false;
+
+function freshState(){
+  const answers = {};
+  MEMBERS.forEach(m => answers[m] = { asistio: null, desempeno: "", notas: "" });
+  return { fecha: todayStr(), hora: null, answers };
+}
+
+function loadDraft(){
+  const d = store.get(DRAFT_KEY);
+  if (d && d.fecha === todayStr() && d.answers) {
+    const s = freshState();
+    s.hora = d.hora || null;
+    MEMBERS.forEach(m => { if (d.answers[m]) s.answers[m] = Object.assign(s.answers[m], d.answers[m]); });
+    state = s;
+  } else {
+    store.del(DRAFT_KEY);
+  }
+}
+const saveDraft = () => store.set(DRAFT_KEY, state);
+
+function show(which){
+  ["setup","main","done"].forEach(id => $(id).classList.toggle("hide", id !== which));
+  $("foot").classList.toggle("hide", which !== "main");
+  $("btnSettings").classList.toggle("hide", which === "setup");
+}
+
+function opt(label, selected, cls, onClick){
+  return h("button", { type: "button", class: "opt" + (selected ? " sel-" + cls : ""), "aria-pressed": String(!!selected), onclick: onClick }, label);
+}
+
+function card(name){
+  const a = state.answers[name];
+  const c = h("section", { class: "card" }, h("div", { class: "name" }, name));
+  c.append(h("div", { class: "row2" },
+    opt("Asistió", a.asistio === "Sí", "g", () => { a.asistio = "Sí"; refresh(name); }),
+    opt("No asistió", a.asistio === "No", "n", () => { a.asistio = "No"; a.desempeno = ""; a.notas = ""; refresh(name); })
+  ));
+  if (a.asistio === "Sí") {
+    const col = h("div", { class: "col" });
+    PERF.forEach((p,i) => col.append(opt(p, a.desempeno === p, ["g","m","r"][i], () => { a.desempeno = p; refresh(name); })));
+    c.append(col);
+    const n = h("input", { type: "text", placeholder: "Nota (opcional)", maxlength: "300" });
+    n.value = a.notas || "";
+    n.addEventListener("input", () => { a.notas = n.value; saveDraft(); });
+    c.append(n);
+  }
+  return c;
+}
+
+function refresh(name){
+  const nw = card(name);
+  cards[name].replaceWith(nw);
+  cards[name] = nw;
+  saveDraft();
+  updateFooter();
+}
+
+function isAnswered(a){
+  return a.asistio === "No" || (a.asistio === "Sí" && PERF.includes(a.desempeno));
+}
+
+function updateFooter(){
+  const done = MEMBERS.filter(m => isAnswered(state.answers[m])).length;
+  $("progTxt").textContent = done + " de " + MEMBERS.length + " respondidos";
+  $("btnSend").disabled = sending || done !== MEMBERS.length || !state.fecha;
+}
+
+function renderMain(){
+  const list = $("list");
+  list.replaceChildren();
+  cards = {};
+  MEMBERS.forEach(m => { cards[m] = card(m); list.append(cards[m]); });
+  $("fecha").value = state.fecha;
+  setMsg("sendMsg", "", "");
+  updateFooter();
+  show("main");
+}
+
+function setMsg(id, text, kind){
+  const e = $(id);
+  e.textContent = text;
+  e.className = "msg" + (kind ? " " + kind : "") + (text ? "" : " hide");
+}
+
+async function send(){
+  if (sending || $("btnSend").disabled) return;
+  sending = true;
+  updateFooter();
+  $("btnSend").textContent = "Enviando...";
+  setMsg("sendMsg", "", "");
+  if (!state.hora) { state.hora = nowHHmm(); saveDraft(); }
+
+  const payload = {
+    clave: cfg.key,
+    fecha: state.fecha,
+    hora: state.hora,
+    registros: MEMBERS.map(m => {
+      const a = state.answers[m];
+      return { integrante: m, asistio: a.asistio, desempeno: a.asistio === "Sí" ? a.desempeno : "", notas: a.notas || "" };
+    })
+  };
+
+  let data = null;
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 30000);
+  try {
+    const res = await fetch(cfg.url, {
+      method: "POST",
+      redirect: "follow",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload),
+      signal: ctl.signal
+    });
+    data = JSON.parse(await res.text());
+  } catch (err) {
+    data = null;
+  } finally {
+    clearTimeout(timer);
+  }
+
+  sending = false;
+  $("btnSend").textContent = "Enviar asistencia";
+  updateFooter();
+
+  if (data && data.exito) {
+    store.del(DRAFT_KEY);
+    $("doneTxt").textContent = data.cantidad + " filas agregadas para el " + state.fecha + " a las " + state.hora + ".";
+    show("done");
+  } else if (data) {
+    setMsg("sendMsg", "El servidor rechazó el envío y no se escribió nada: " + data.error + (/clave/i.test(data.error || "") ? " Revisa la clave en Ajustes." : ""), "err");
+  } else {
+    setMsg("sendMsg", "No se pudo confirmar el envío. Antes de reenviar, abre la hoja y revisa si ya aparecieron las filas de este taller, para no duplicarlas. Tus respuestas siguen guardadas.", "err");
+  }
+}
+
+function openSettings(){
+  $("cfgUrl").value = (cfg && cfg.url) || DEFAULT_URL;
+  $("cfgKey").value = (cfg && cfg.key) || "";
+  setMsg("setupMsg", "", "");
+  $("cfgCancel").classList.toggle("hide", !cfg);
+  show("setup");
+}
+
+$("btnSettings").addEventListener("click", openSettings);
+$("cfgCancel").addEventListener("click", () => renderMain());
+$("cfgSave").addEventListener("click", () => {
+  const url = $("cfgUrl").value.trim();
+  const key = $("cfgKey").value.trim();
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/[^\s]+\/exec$/.test(url)) { setMsg("setupMsg", "La URL debe empezar con https://script.google.com/macros/s/ y terminar en /exec.", "err"); return; }
+  if (key.length < 8) { setMsg("setupMsg", "Escribe la clave secreta completa.", "err"); return; }
+  cfg = { url, key };
+  store.set(CFG_KEY, cfg);
+  renderMain();
+});
+$("fecha").addEventListener("change", e => { state.fecha = e.target.value; saveDraft(); updateFooter(); });
+$("btnSend").addEventListener("click", send);
+$("btnNew").addEventListener("click", () => { state = freshState(); renderMain(); });
+
+loadDraft();
+if (cfg && cfg.url && cfg.key) renderMain(); else openSettings();
+</script>
+</body>
+</html>
